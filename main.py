@@ -59,9 +59,13 @@ if user_input:
             # Luodaan satunnaiskuva siemenluvulla
             seed = random.randint(1, 999999)
             
-            # Englanninkieliset ohjeet tekoälylle Sofian ulkonäöstä
-            prompt = "A_realistic_modern_selfie_of_a_beautiful_22-year-old_Finnish_girl_short_platinum_blonde_hair_grey-blue_eyes_athletic_body_wearing_earrings_bold_club_style_clothing_bokeh_neon_lights_background_night_club"
-            suora_kuva_url = f"https://pollinations.ai{prompt}?width=500&height=500&enhance=true&seed={seed}"
+            # Ohjeet tekoälylle korjattuna tavallisilla välilyönneillä
+            prompt = "A realistic modern selfie of a beautiful 22-year-old Finnish girl, short platinum blonde hair, grey-blue eyes, athletic body, wearing earrings, bold club style clothing, bokeh neon lights background, night club"
+            
+            # Koodi muuttaa välilyönnit automaattisesti toimiviksi %20-merkeiksi nettiä varten
+            netti_prompt = prompt.replace(" ", "%20")
+            suora_kuva_url = f"https://pollinations.ai{netti_prompt}?width=500&height=500&enhance=true&seed={seed}"
+
             
             # Näytetään kuva livenä
             st.image(suora_kuva_url, use_container_width=True)
