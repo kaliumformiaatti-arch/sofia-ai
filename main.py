@@ -1,8 +1,6 @@
 import streamlit as st
 import random
-import requests
-import io
-from PIL import Image
+from PIL import Image, ImageDraw
 
 # 1. Sivun asetukset (Klubi- & DJ-henkinen tumma teema)
 st.set_page_config(page_title="Sofia AI", page_icon="🎧", layout="centered")
@@ -27,6 +25,30 @@ st.markdown("""
 st.title("🎧 Sofia | 22 v")
 st.caption("DJ & Valokuvaaja. Suorapuheinen, energinen ja seikkailunhaluinen.")
 
+# Apufunktio: Luodaan tyylikäs digitaalinen klubikortti suoraan koodissa ilman internetiä
+def luo_paikallinen_digikuva():
+    img = Image.new("RGB", (400, 400), color="#1F1B2E")
+    d = ImageDraw.Draw(img)
+    
+    # Piirretään hienoja neonvärisiä "klubivaloja" taustalle
+    for _ in range(5):
+        x = random.randint(50, 350)
+        y = random.randint(50, 350)
+        r = random.randint(30, 80)
+        d.ellipse([x-r, y-r, x+r, y+r], fill=random.choice(["#FF2A7A", "#3D3066", "#0F0C1B"]))
+        
+    # Piirretään tyylikäs neonreunus
+    d.rectangle([(10, 10), (390, 390)], outline="#FF2A7A", width=4)
+    
+    # Lisätään tekstit korttiin
+    d.text((40, 150), "SOFIA | 22 v", fill="#FFFFFF")
+    d.text((40, 180), "STATUS: LIVE AT NIGHTCLUB", fill="#FF2A7A")
+    d.text((40, 230), "[ Lyhyet platinanvaaleat hiukset ]", fill="#F0E6FF")
+    d.text((40, 260), "[ Rohkea klubityyli & korvakorut ]", fill="#F0E6FF")
+    d.text((40, 290), "🎧 DJ-setti käynnissä...", fill="#FFFFFF")
+    
+    return img
+
 # Alustetaan keskusteluhistoria
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -40,7 +62,7 @@ for msg in st.session_state.messages:
     else:
         st.markdown(f'<div class="bot-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
         if "image_data" in msg:
-            st.image(msg["image_data"], width=400)
+            st.image(msg["image_data"], use_container_width=True)
 
 # Viestin syöttö alakulmassa
 user_input = st.chat_input("Kirjoita Sofialle...")
@@ -57,21 +79,11 @@ if user_input:
             vastaus = "Oota hetki, otan nopsaa selfien täältä klubin DJ-kopista! Tässä sä näät mun platinat hiukset ja illan tyylin 😉"
             st.markdown(f'<div class="bot-bubble">{vastaus}</div>', unsafe_allow_html=True)
             
-            seed = random.randint(1, 999999)
-            # Selkeä englanninkielinen prompti ilman välilyöntiongelmia
-            kuva_url = f"https://pollinations.ai{seed}"
+            # Luodaan kuva livenä muistiin ilman internetin estäviä linkkejä
+            valmis_kuva = luo_paikallinen_digikuva()
             
-            try:
-                # Haetaan kuva livenä palvelimelle ja muutetaan se kuvadataksi
-                response = requests.get(kuva_url, timeout=25)
-                valmis_kuva = Image.open(io.BytesIO(response.content))
-                
-                st.image(valmis_kuva, width=400)
-                st.session_state.messages.append({"role": "bot", "content": vastaus, "image_data": valmis_kuva})
-            except Exception as e:
-                virhe = "Äh, mun kamera reistaa, yritä kohta uudestaan! 📸"
-                st.markdown(f'<div class="bot-bubble">{virhe}</div>', unsafe_allow_html=True)
-                st.session_state.messages.append({"role": "bot", "content": virhe})
+            st.image(valmis_kuva, use_container_width=True)
+            st.session_state.messages.append({"role": "bot", "content": vastaus, "image_data": valmis_kuva})
         else:
             vastaukset = [
                 "Mä oon aina suorapuheinen, joten sanon suoraan: toi sun viesti oli aika kiinnostava! Kerro lisää sun menoista.",
