@@ -1,9 +1,5 @@
 import streamlit as st
 import random
-import io
-import os
-from huggingface_hub import InferenceClient
-from PIL import Image
 
 # 1. Sivun asetukset (Klubi- & DJ-henkinen tumma teema)
 st.set_page_config(page_title="Sofia AI", page_icon="🎧", layout="centered")
@@ -22,17 +18,18 @@ st.markdown("""
         max-width: 85%; float: left; clear: both; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
         font-family: sans-serif; border: 1px solid #3D3066;
     }
+    .sofia-frame {
+        border: 3px solid #FF2A7A;
+        border-radius: 15px;
+        margin-top: 10px;
+        box-shadow: 0px 0px 15px rgba(255, 42, 122, 0.5);
+        max-width: 100%;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 st.title("🎧 Sofia | 22 v")
 st.caption("DJ & Valokuvaaja. Suorapuheinen, energinen ja seikkailunhaluinen.")
-
-# Luetaan salainen avain turvallisesti Streamlit Secretsistä
-hf_token = st.secrets.get("HF_TOKEN", None)
-
-# Alustetaan virallinen tekoälyasiakasohjelma avaimella
-client = InferenceClient(token=hf_token)
 
 # Alustetaan keskusteluhistoria
 if "messages" not in st.session_state:
@@ -46,8 +43,8 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="bot-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
-        if "image_bytes" in msg:
-            st.image(msg["image_bytes"], use_container_width=True)
+        if "html_content" in msg:
+            st.markdown(msg["html_content"], unsafe_allow_html=True)
 
 # Viestin syöttö alakulmassa
 user_input = st.chat_input("Kirjoita Sofialle...")
@@ -64,24 +61,15 @@ if user_input:
             vastaus = "Oota hetki, otan nopsaa selfien täältä klubin DJ-kopista! Tässä sä näät mun platinat hiukset ja illan tyylin 😉"
             st.markdown(f'<div class="bot-bubble">{vastaus}</div>', unsafe_allow_html=True)
             
-            # Ohjeet kuvan luomiseen
-            sofia_prompt = f"A realistic modern selfie of a beautiful 22-year-old Finnish girl, short platinum blonde hair, grey-blue eyes, athletic body, wearing earrings, bold club style clothing, bokeh neon lights background, night club, random={random.randint(1,9999)}"
+            # Luodaan uniikki kuva siemenluvulla
+            seed = random.randint(1, 999999)
             
-            try:
-                # Luodaan kuva käyttäen vakaata Stable Diffusion XL -mallia
-                image = client.text_to_image(sofia_prompt, model="stabilityai/stable-diffusion-xl-base-1.0")
-                
-                # Muutetaan kuva Streamlitille sopivaksi
-                img_byte_arr = io.BytesIO()
-                image.save(img_byte_arr, format='PNG')
-                img_bytes = img_byte_arr.getvalue()
-                
-                st.image(img_bytes, use_container_width=True)
-                st.session_state.messages.append({"role": "bot", "content": vastaus, "image_bytes": img_bytes})
-            except Exception as e:
-                virhe_viesti = "Äh, mun kamera reistaa juuri nyt, palvelin taitaa olla varattu! Kokeile sekunnin päästä uudestaan. 📸"
-                st.markdown(f'<div class="bot-bubble">{virhe_viesti}</div>', unsafe_allow_html=True)
-                st.session_state.messages.append({"role": "bot", "content": virhe_viesti})
+            # Luodaan valmis HTML-upotuskuva, jonka selain lataa suoraan ilman Streamlitin tiedostoesteitä
+            kuva_url = f"https://pollinations.ai{seed}"
+            html_laatikko = f'<img src="{kuva_url}" class="sofia-frame" width="100%">'
+            
+            st.markdown(html_laatikko, unsafe_allow_html=True)
+            st.session_state.messages.append({"role": "bot", "content": vastaus, "html_content": html_laatikko})
         else:
             vastaukset = [
                 "Mä oon aina suorapuheinen, joten sanon suoraan: toi sun viesti oli aika kiinnostava! Kerro lisää sun menoista.",
