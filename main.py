@@ -27,7 +27,7 @@ st.title("🎧 Sofia | 22 v")
 st.caption("DJ & Valokuvaaja. Suorapuheinen, energinen ja seikkailunhaluinen.")
 
 # Liitä oma hf_... alkaen oleva avaimesi tähän lainausmerkkien sisään
-client = InferenceClient(token="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")
+client = InferenceClient(model="stabilityai/stable-diffusion-xl-base-1.0")
 
 # Alustetaan keskusteluhistoria
 if "messages" not in st.session_state:
