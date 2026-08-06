@@ -1,7 +1,9 @@
 import streamlit as st
 import random
 import io
+import os
 from huggingface_hub import InferenceClient
+from PIL import Image
 
 # 1. Sivun asetukset (Klubi- & DJ-henkinen tumma teema)
 st.set_page_config(page_title="Sofia AI", page_icon="🎧", layout="centered")
@@ -26,8 +28,11 @@ st.markdown("""
 st.title("🎧 Sofia | 22 v")
 st.caption("DJ & Valokuvaaja. Suorapuheinen, energinen ja seikkailunhaluinen.")
 
-# Liitä oma hf_... alkaen oleva avaimesi tähän lainausmerkkien sisään
-client = InferenceClient(model="stabilityai/stable-diffusion-xl-base-1.0")
+# Luetaan salainen avain turvallisesti Streamlit Secretsistä
+hf_token = st.secrets.get("HF_TOKEN", None)
+
+# Alustetaan virallinen tekoälyasiakasohjelma avaimella
+client = InferenceClient(token=hf_token)
 
 # Alustetaan keskusteluhistoria
 if "messages" not in st.session_state:
@@ -63,10 +68,10 @@ if user_input:
             sofia_prompt = f"A realistic modern selfie of a beautiful 22-year-old Finnish girl, short platinum blonde hair, grey-blue eyes, athletic body, wearing earrings, bold club style clothing, bokeh neon lights background, night club, random={random.randint(1,9999)}"
             
             try:
-                # Luodaan kuva käyttäen Flux-mallia virallisen kirjaston kautta
+                # Luodaan kuva käyttäen vakaata Stable Diffusion XL -mallia
                 image = client.text_to_image(sofia_prompt, model="stabilityai/stable-diffusion-xl-base-1.0")
                 
-                # Muutetaan kuva Streamlitille sopivaan muotoon
+                # Muutetaan kuva Streamlitille sopivaksi
                 img_byte_arr = io.BytesIO()
                 image.save(img_byte_arr, format='PNG')
                 img_bytes = img_byte_arr.getvalue()
