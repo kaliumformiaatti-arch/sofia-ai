@@ -64,7 +64,7 @@ if user_input:
             
             try:
                 # Luodaan kuva käyttäen Flux-mallia virallisen kirjaston kautta
-                image = client.text_to_image(sofia_prompt, model="black-forest-labs/FLUX.1-schnell")
+                image = client.text_to_image(sofia_prompt, model="stabilityai/stable-diffusion-xl-base-1.0")
                 
                 # Muutetaan kuva Streamlitille sopivaan muotoon
                 img_byte_arr = io.BytesIO()
