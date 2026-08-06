@@ -56,16 +56,15 @@ if user_input:
             vastaus = "Oota hetki, otan nopsaa selfien täältä klubin DJ-kopista! Tässä sä näät mun platinat hiukset ja illan tyylin 😉"
             st.markdown(f'<div class="bot-bubble">{vastaus}</div>', unsafe_allow_html=True)
             
-            # Luodaan satunnainen siemenluku, jotta saadaan aina uusi kuva
+            # Luodaan satunnaiskuva siemenluvulla
             seed = random.randint(1, 999999)
             
-            # Luodaan suora osoite tekoälykuvaan (Pollinations)
+            # Englanninkieliset ohjeet tekoälylle Sofian ulkonäöstä
             prompt = "A_realistic_modern_selfie_of_a_beautiful_22-year-old_Finnish_girl_short_platinum_blonde_hair_grey-blue_eyes_athletic_body_wearing_earrings_bold_club_style_clothing_bokeh_neon_lights_background_night_club"
-            suora_kuva_url = f"https://image.pollinations.ai/p/{prompt}?width=500&height=500&enhance=true&seed={seed}"
+            suora_kuva_url = f"https://pollinations.ai{prompt}?width=500&height=500&enhance=true&seed={seed}"
             
-            # Näytetään kuva suoraan linkistä ilman taustalatauksia
+            # Näytetään kuva livenä
             st.image(suora_kuva_url, use_container_width=True)
-            st.session_state.messages.append({"role": "bot", "content": ...
             st.session_state.messages.append({"role": "bot", "content": vastaus, "image_url": suora_kuva_url})
         else:
             # Sofian suorapuheinen persoona vastaa chattiin
