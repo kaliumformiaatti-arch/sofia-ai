@@ -29,7 +29,7 @@ gemini_key = st.secrets.get("GEMINI_KEY", None)
 # Funktio: Pyydetään Geminiltä luonnollista suomen kieltä
 def kysy_geminilta(ohje, historia):
     if not gemini_key:
-        return "API-avain puuttuu Streamlit Secretsistä!"
+        return "API-avain (GEMINI_KEY) puuttuu kokonaan Streamlit Secrets -asetuksista!"
         
     url = f"https://googleapis.com{gemini_key}"
     headers = {'Content-Type': 'application/json'}
@@ -37,12 +37,10 @@ def kysy_geminilta(ohje, historia):
     # Rakennetaan Geminille sopiva viestihistoria ja lisätään luonnerooli alkuun
     contents = []
     
-    # Syötetään hahmon luonne "system-ohjeena" Geminille
     contents.append({"role": "user", "parts": [{"text": f"MÄÄRITELMÄ: {ohje}. Vastaa seuraaviin viesteihin täysin tämän roolin mukaisesti."}]})
     contents.append({"role": "model", "parts": [{"text": "Ymmärretty. Toimin tästä eteenpäin täysin tämän hahmon luonteen mukaisesti luonnollisella suomen kielellä."}]})
     
     for msg in historia:
-        # Gemini käyttää rooleja 'user' ja 'model'
         rooli = "user" if msg["role"] == "user" else "model"
         contents.append({"role": rooli, "parts": [{"text": msg["content"]}]})
         
@@ -51,9 +49,16 @@ def kysy_geminilta(ohje, historia):
     try:
         res = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
         vastaus_json = res.json()
+        
+        # Jos Google palauttaa virheen JSON-muodossa
+        if 'error' in vastaus_json:
+            return f"Googlen API-virhe: {vastaus_json['error']['message']} (Koodi: {vastaus_json['error']['code']})"
+            
         return vastaus_json['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
-        return f"Äh, mun ajatukset pätkii vähän taustalla... Kokeile laittaa viesti uudestaan! 💕"
+        # Tämä paljastaa meille tarkan teknisen syyn chattiin jos jokin kaatuu
+        vastaus_teksti = res.text if 'res' in locals() else 'Ei vastausta palvelimelta'
+        return f"Yhteysvirhe: {str(e)} | Palvelimen vastaus: {vastaus_teksti}"
 
 # 3. Alustetaan oletushahmot muistiin
 if "hahmot" not in st.session_state:
@@ -119,14 +124,13 @@ for msg in st.session_state.keskustelut[valittu_nimi]:
     else:
         st.markdown(f'<div class="bot-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
 
-# 6. VIESTIN LÄHETYS JA GEMINI-VASTAUS
+# 6. VIESTIN LÄHETYS
 user_input = st.chat_input(f"Kirjoita hahmolle {valittu_nimi}...")
 
 if user_input:
     st.markdown(f'<div class="user-bubble">{user_input}</div>', unsafe_allow_html=True)
     st.session_state.keskustelut[valittu_nimi].append({"role": "user", "content": user_input})
     
-    # Napataan vain historian viestit (ilman mahdollisia vanhoja kokeilukuvia) Geminille
     historia_ilman_kuvia = [{"role": m["role"], "content": m["content"]} for m in st.session_state.keskustelut[valittu_nimi]]
     
     with st.spinner(f"{valittu_nimi} kirjoittaa..."):
