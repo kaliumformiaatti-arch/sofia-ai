@@ -1,8 +1,5 @@
 import streamlit as st
 import random
-import requests
-import io
-from PIL import Image
 
 # 1. Sivun asetukset (Klubi- & DJ-henkinen tumma teema)
 st.set_page_config(page_title="Sofia AI", page_icon="🎧", layout="centered")
@@ -27,17 +24,6 @@ st.markdown("""
 st.title("🎧 Sofia | 22 v")
 st.caption("DJ & Valokuvaaja. Suorapuheinen, energinen ja seikkailunhaluinen.")
 
-# Varma, ilmainen ja nopea kuvageneraattori livenä
-def luo_oikea_tekoalykuva(prompt):
-    try:
-        # Muutetaan prompti nettiystävälliseen muotoon (korvataan välilyönnit %20)
-        netti_prompt = prompt.replace(" ", "%20")
-        kuva_url = f"https://pollinations.ai{netti_prompt}?width=500&height=500&enhance=true&seed={random.randint(1, 99999)}"
-        response = requests.get(kuva_url, timeout=15)
-        return Image.open(io.BytesIO(response.content))
-    except Exception as e:
-        return None
-
 # Alustetaan keskusteluhistoria
 if "messages" not in st.session_state:
     st.session_state.messages = [
@@ -50,8 +36,8 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="bot-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
-        if "image" in msg:
-            st.image(msg["image"], use_container_width=True)
+        if "image_url" in msg:
+            st.image(msg["image_url"], use_container_width=True)
 
 # Viestin syöttö alakulmassa
 user_input = st.chat_input("Kirjoita Sofialle...")
@@ -70,18 +56,17 @@ if user_input:
             vastaus = "Oota hetki, otan nopsaa selfien täältä klubin DJ-kopista! Tässä sä näät mun platinat hiukset ja illan tyylin 😉"
             st.markdown(f'<div class="bot-bubble">{vastaus}</div>', unsafe_allow_html=True)
             
-            # Sofian tarkat tuntomerkit siirretään tekoälylle kuvattavaksi englanniksi
-            sofia_prompt = "A realistic modern selfie of a beautiful 22-year-old Finnish girl, short platinum blonde hair, grey-blue eyes, athletic body, wearing earrings, bold club style clothing, bokeh neon lights background, night club, professional photography"
+            # Luodaan satunnainen siemenluku, jotta saadaan aina uusi kuva
+            seed = random.randint(1, 999999)
             
-            kuva = luo_oikea_tekoalykuva(sofia_prompt)
+            # Luodaan suora osoite tekoälykuvaan (Pollinations)
+            prompt = "A_realistic_modern_selfie_of_a_beautiful_22-year-old_Finnish_girl_short_platinum_blonde_hair_grey-blue_eyes_athletic_body_wearing_earrings_bold_club_style_clothing_bokeh_neon_lights_background_night_club"
+            suora_kuva_url = f"https://image.pollinations.ai/p/{prompt}?width=500&height=500&enhance=true&seed={seed}"
             
-            if kuva:
-                st.image(kuva, use_container_width=True)
-                st.session_state.messages.append({"role": "bot", "content": vastaus, "image": kuva})
-            else:
-                virhe_viesti = "Äh, mun kamera on just nyt ylikuormittunut, yritä sekunnin päästä uudestaan! 📸"
-                st.markdown(f'<div class="bot-bubble">{virhe_viesti}</div>', unsafe_allow_html=True)
-                st.session_state.messages.append({"role": "bot", "content": virhe_viesti})
+            # Näytetään kuva suoraan linkistä ilman taustalatauksia
+            st.image(suora_kuva_url, use_container_width=True)
+            st.session_state.messages.append({"role": "bot", "content": ...
+            st.session_state.messages.append({"role": "bot", "content": vastaus, "image_url": suora_kuva_url})
         else:
             # Sofian suorapuheinen persoona vastaa chattiin
             vastaukset = [
