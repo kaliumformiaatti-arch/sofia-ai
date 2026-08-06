@@ -4,6 +4,7 @@ import requests
 import io
 from PIL import Image
 
+# 1. Sivun asetukset (Klubi- & DJ-henkinen tumma teema)
 st.set_page_config(page_title="Sofia AI", page_icon="🎧", layout="centered")
 
 st.markdown("""
@@ -26,21 +27,24 @@ st.markdown("""
 st.title("🎧 Sofia | 22 v")
 st.caption("DJ & Valokuvaaja. Suorapuheinen, energinen ja seikkailunhaluinen.")
 
-IMAGE_API_URL = "https://huggingface.co"
-
+# Varma, ilmainen ja nopea kuvageneraattori livenä
 def luo_oikea_tekoalykuva(prompt):
     try:
-        response = requests.post(IMAGE_API_URL, json={"inputs": prompt})
-        image_bytes = response.content
-        return Image.open(io.BytesIO(image_bytes))
+        # Muutetaan prompti nettiystävälliseen muotoon (korvataan välilyönnit %20)
+        netti_prompt = prompt.replace(" ", "%20")
+        kuva_url = f"https://pollinations.ai{netti_prompt}?width=500&height=500&enhance=true&seed={random.randint(1, 99999)}"
+        response = requests.get(kuva_url, timeout=15)
+        return Image.open(io.BytesIO(response.content))
     except Exception as e:
         return None
 
+# Alustetaan keskusteluhistoria
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "bot", "content": "Moi! Se on Sofia tässä. Tulin just klubilta kotiin ja keitin kahvit. Mitäs sun päivään kuuluu? Puhutaanko vai tehäänkö jotain kreisiä? ⚡"}
     ]
 
+# Näytetään vanhat viestit
 for msg in st.session_state.messages:
     if msg["role"] == "user":
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
@@ -49,21 +53,26 @@ for msg in st.session_state.messages:
         if "image" in msg:
             st.image(msg["image"], use_container_width=True)
 
+# Viestin syöttö alakulmassa
 user_input = st.chat_input("Kirjoita Sofialle...")
 
 if user_input:
+    # Näytetään käyttäjän viesti heti
     st.markdown(f'<div class="user-bubble">{user_input}</div>', unsafe_allow_html=True)
     st.session_state.messages.append({"role": "user", "content": user_input})
     
-    avainsanat = ["kuva", "kuvan", "piirrä", "näytä", "selfie", "photo", "kuvaaj"]
+    # Tarkistetaan pyydetäänkö kuvaa
+    avainsanat = ["kuva", "kuvan", "piirrä", "näytä", "selfie", "photo", "kuvaaj", "kuvaasi"]
     pyysi_kuvaa = any(sana in user_input.lower() for sana in avainsanat)
     
     with st.spinner("Sofia kirjoittaa..."):
         if pyysi_kuvaa:
-            vastaus = "Oota hetki, otan nopsaa kuvan täältä klubin DJ-kopista! Tässä sä näät mun platinat hiukset ja illan tyylin 😉"
+            vastaus = "Oota hetki, otan nopsaa selfien täältä klubin DJ-kopista! Tässä sä näät mun platinat hiukset ja illan tyylin 😉"
             st.markdown(f'<div class="bot-bubble">{vastaus}</div>', unsafe_allow_html=True)
             
-            sofia_prompt = "A realistic selfie of a 22-year-old beautiful Finnish girl, short platinum blonde hair, grey-blue eyes, athletic body, wearing earrings, bold club style clothing, bokeh neon lights background, night club, professional photography"
+            # Sofian tarkat tuntomerkit siirretään tekoälylle kuvattavaksi englanniksi
+            sofia_prompt = "A realistic modern selfie of a beautiful 22-year-old Finnish girl, short platinum blonde hair, grey-blue eyes, athletic body, wearing earrings, bold club style clothing, bokeh neon lights background, night club, professional photography"
+            
             kuva = luo_oikea_tekoalykuva(sofia_prompt)
             
             if kuva:
@@ -74,6 +83,7 @@ if user_input:
                 st.markdown(f'<div class="bot-bubble">{virhe_viesti}</div>', unsafe_allow_html=True)
                 st.session_state.messages.append({"role": "bot", "content": virhe_viesti})
         else:
+            # Sofian suorapuheinen persoona vastaa chattiin
             vastaukset = [
                 "Mä oon aina suorapuheinen, joten sanon suoraan: toi sun viesti oli aika kiinnostava! Kerro lisää sun menoista.",
                 "Haha, sä oot kyllä hauska! Pitäiskö sun tulla mun seuraavalle keikalle kattoo ku miksaan? 🎧",
