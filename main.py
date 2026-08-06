@@ -26,8 +26,8 @@ st.markdown("""
 st.title("🎧 Sofia | 22 v")
 st.caption("DJ & Valokuvaaja. Suorapuheinen, energinen ja seikkailunhaluinen.")
 
-# Alustetaan virallinen ja ilmainen Hugging Face -asiakasohjelma
-client = InferenceClient()
+# Liitä oma hf_... alkaen oleva avaimesi tähän lainausmerkkien sisään
+client = InferenceClient(token=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)
 
 # Alustetaan keskusteluhistoria
 if "messages" not in st.session_state:
