@@ -1,9 +1,9 @@
 import streamlit as st
 import random
-from PIL import Image, ImageDraw
+from huggingface_hub import InferenceClient
 
-# 1. Sivun asetukset (Klubi- & DJ-henkinen tumma teema)
-st.set_page_config(page_title="Sofia AI", page_icon="🎧", layout="centered")
+# 1. Sivun asetukset ja upea neon-teema
+st.set_page_config(page_title="AI Hahmot", page_icon="💖", layout="centered")
 
 st.markdown("""
     <style>
@@ -19,79 +19,113 @@ st.markdown("""
         max-width: 85%; float: left; clear: both; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
         font-family: sans-serif; border: 1px solid #3D3066;
     }
+    .sidebar .sidebar-content { background-color: #110E24; }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🎧 Sofia | 22 v")
-st.caption("DJ & Valokuvaaja. Suorapuheinen, energinen ja seikkailunhaluinen.")
+# 2. Alustetaan ilmainen tekoäly asiakasohjelma Secrets-avaimella
+hf_token = st.secrets.get("HF_TOKEN", None)
+client = InferenceClient(token=hf_token)
 
-# Apufunktio: Luodaan tyylikäs digitaalinen klubikortti suoraan koodissa ilman internetiä
-def luo_paikallinen_digikuva():
-    img = Image.new("RGB", (400, 400), color="#1F1B2E")
-    d = ImageDraw.Draw(img)
-    
-    # Piirretään hienoja neonvärisiä "klubivaloja" taustalle
-    for _ in range(5):
-        x = random.randint(50, 350)
-        y = random.randint(50, 350)
-        r = random.randint(30, 80)
-        d.ellipse([x-r, y-r, x+r, y+r], fill=random.choice(["#FF2A7A", "#3D3066", "#0F0C1B"]))
-        
-    # Piirretään tyylikäs neonreunus
-    d.rectangle([(10, 10), (390, 390)], outline="#FF2A7A", width=4)
-    
-    # Lisätään tekstit korttiin
-    d.text((40, 150), "SOFIA | 22 v", fill="#FFFFFF")
-    d.text((40, 180), "STATUS: LIVE AT NIGHTCLUB", fill="#FF2A7A")
-    d.text((40, 230), "[ Lyhyet platinanvaaleat hiukset ]", fill="#F0E6FF")
-    d.text((40, 260), "[ Rohkea klubityyli & korvakorut ]", fill="#F0E6FF")
-    d.text((40, 290), "🎧 DJ-setti käynnissä...", fill="#FFFFFF")
-    
-    return img
+# 3. Alustetaan oletushahmot muistiin (Kuvasi mukaisesti)
+if "hahmot" not in st.session_state:
+    st.session_state.hahmot = {
+        "Sofia": {
+            "ika": 22,
+            "kuvaus": "DJ & Valokuvaaja. Suorapuheinen, energinen ja seikkailunhaluinen. Lyhyet platinanvaaleat hiukset.",
+            "ohje": "Olet Sofia, 22-vuotias suomalainen DJ ja valokuvaaja. Luonteeltasi olet suorapuheinen, flirttaileva, energinen ja seikkailunhaluinen. Käytä puhekieltä, rentoa suomea ja emojiita.",
+            "tervehdys": "Moi! Se on Sofia tässä. Tulin just klubilta kotiin ja keitin kahvit. Mitäs sun päivään kuuluu? Puhutaanko vai tehäänkö jotain kreisiä? ⚡"
+        },
+        "Emilia": {
+            "ika": 24,
+            "kuvaus": "Pitkät tummat aaltoilevat hiukset, kirkkaat silmät. Suloinen, ujo ja syvällinen pohtija.",
+            "ohje": "Olet Emilia, 24-vuotias suomalainen nainen. Sinulla on pitkät tummat aaltoilevat hiukset. Olet suloinen, hieman ujo, empaattinen ja tykkäät syvällisistä keskusteluista. Puhu ystävällisesti ja lämpimästi.",
+            "tervehdys": "Hei... Ihana kun laitoit viestiä. Olin just lukemassa kirjaa ja mietin sinua. Mitä sinulle kuuluu tänään? Kirjoitellaanko hetki? 🌸"
+        },
+        "Aino": {
+            "ika": 27,
+            "kuvaus": "Tummanruskeat kiharat hiukset. Itsevarma, salaperäinen ja itsenäinen nainen.",
+            "ohje": "Olet Aino, 27-vuotias itsevarma ja salaperäinen suomalainen nainen. Olet itsenäinen, hieman arvoituksellinen ja pidät älykkäästä haastamisesta. Puhu itsevarmasti ja kiehtovasti.",
+            "tervehdys": "Iltaa. Mietinkin juuri, milloin mahtaisit ottaa yhteyttä. Toivottavasti päiväsi on ollut yhtä mielenkiintoinen kuin minun. Mitä sinulla on mielessä? ☕"
+        }
+    }
 
-# Alustetaan keskusteluhistoria
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "bot", "content": "Moi! Se on Sofia tässä. Tulin just klubilta kotiin ja keitin kahvit. Mitäs sun päivään kuuluu? Puhutaanko vai tehäänkö jotain kreisiä? ⚡"}
+# 4. Alustetaan chat-historioiden säilytys jokaiselle hahmolle erikseen
+if "keskustelut" not in st.session_state:
+    st.session_state.keskustelut = {}
+
+# 5. SIVUPALKKI: Hahmojen valinta ja uuden luominen (Kuten esimerkkikuvassasi)
+st.sidebar.title("👥 Hahmot")
+valittu_nimi = st.sidebar.radio("Valitse kenen kanssa keskustelemat:", list(st.session_state.hahmot.keys()))
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("➕ Luo uusi hahmo")
+uusi_nimi = st.sidebar.text_input("Nimi:")
+uusi_ika = st.sidebar.number_input("Ikä:", min_value=18, max_value=100, value=20)
+uusi_kuvaus = st.sidebar.text_area("Kuvaus / Luonne:")
+
+if st.sidebar.button("Luo hahmo"):
+    if uusi_nimi and uusi_nimi not in st.session_state.hahmot:
+        st.sidebar.success(f"Hahmo {uusi_nimi} luotu!")
+        st.session_state.hahmot[uusi_nimi] = {
+            "ika": uusi_ika,
+            "kuvaus": uusi_kuvaus,
+            "ohje": f"Olet {uusi_nimi}, {uusi_ika}-vuotias suomalainen. Luonteenkuvauksesi on: {uusi_kuvaus}. Puhu suomeksi luonteesi mukaisesti.",
+            "tervehdys": f"Moi! Mä oon {uusi_nimi}. Kiva tutustua suhun! Mitä tehään tänään? ✨"
+        }
+        st.rerun()
+
+# 6. AKTIVISEN HAHMON ALUSTUS CHATTIIN
+hahmo = st.session_state.hahmot[valittu_nimi]
+
+if valittu_nimi not in st.session_state.keskustelut:
+    st.session_state.keskustelut[valittu_nimi] = [
+        {"role": "assistant", "content": hahmo["tervehdys"]}
     ]
 
-# Näytetään vanhat viestit
-for msg in st.session_state.messages:
+# Näytetään valitun hahmon tiedot ylhäällä
+st.title(f"🎧 {valittu_nimi} | {hahmo['ika']} v")
+st.caption(hahmo["kuvaus"])
+
+# Näytetään valitun hahmon keskusteluhistoria muistista
+for msg in st.session_state.keskustelut[valittu_nimi]:
     if msg["role"] == "user":
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="bot-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
-        if "image_data" in msg:
-            st.image(msg["image_data"], use_container_width=True)
 
-# Viestin syöttö alakulmassa
-user_input = st.chat_input("Kirjoita Sofialle...")
+# 7. TEKSTINSYÖTTÖ JA TEKOÄLYN ÄLYKÄS VASTAUS
+user_input = st.chat_input(f"Kirjoita hahmolle {valittu_nimi}...")
 
 if user_input:
     st.markdown(f'<div class="user-bubble">{user_input}</div>', unsafe_allow_html=True)
-    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.session_state.keskustelut[valittu_nimi].append({"role": "user", "content": user_input})
     
-    avainsanat = ["kuva", "kuvan", "piirrä", "näytä", "selfie", "photo", "kuvaaj", "kuvaasi"]
-    pyysi_kuvaa = any(sana in user_input.lower() for sana in avainsanat)
-    
-    with st.spinner("Sofia kirjoittaa..."):
-        if pyysi_kuvaa:
-            vastaus = "Oota hetki, otan nopsaa selfien täältä klubin DJ-kopista! Tässä sä näät mun platinat hiukset ja illan tyylin 😉"
-            st.markdown(f'<div class="bot-bubble">{vastaus}</div>', unsafe_allow_html=True)
+    with st.spinner(f"{valittu_nimi} miettii vastausta..."):
+        try:
+            # Luodaan tekoälyä varten viestijono, joka sisältää hahmon rooliohjeen (System prompt)
+            api_messages = [{"role": "system", "content": hahmo["ohje"]}]
             
-            # Luodaan kuva livenä muistiin ilman internetin estäviä linkkejä
-            valmis_kuva = luo_paikallinen_digikuva()
+            # Lisätään mukaan aiemmat viestit muistista, jotta hahmo muistaa mistä puhuttiin
+            for m in st.session_state.keskustelut[valittu_nimi]:
+                api_messages.append({"role": m["role"], "content": m["content"]})
+                
+            # Pyydetään älykäs suomenkielinen vastaus Hugging Facelta
+            response = client.chat_completion(
+                model="Qwen/Qwen2.5-7B-Instruct",
+                messages=api_messages,
+                max_tokens=150,
+                temperature=0.7
+            )
             
-            st.image(valmis_kuva, use_container_width=True)
-            st.session_state.messages.append({"role": "bot", "content": vastaus, "image_data": valmis_kuva})
-        else:
-            vastaukset = [
-                "Mä oon aina suorapuheinen, joten sanon suoraan: toi sun viesti oli aika kiinnostava! Kerro lisää sun menoista.",
-                "Haha, sä oot kyllä hauska! Pitäiskö sun tulla mun seuraavalle keikalle kattoo ku miksaan? 🎧",
-                "Seikkailu ois kova sana just nyt. Mut kerro ensin, mikä sut saa syttymään? 🔥"
-            ]
-            vastaus = random.choice(vastaukset)
+            vastaus = response.choices[0].message.content
+            
             st.markdown(f'<div class="bot-bubble">{vastaus}</div>', unsafe_allow_html=True)
-            st.session_state.messages.append({"role": "bot", "content": vastaus})
+            st.session_state.keskustelut[valittu_nimi].append({"role": "assistant", "content": vastaus})
+            
+        except Exception as e:
+            virhe = f"Äh, mun ajatukset pätkii just nyt! Kokeile lähettää viesti uudestaan. 💕 (Virhe: {e})"
+            st.markdown(f'<div class="bot-bubble">{virhe}</div>', unsafe_allow_html=True)
+            st.session_state.keskustelut[valittu_nimi].append({"role": "assistant", "content": virhe})
             
     st.rerun()
