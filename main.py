@@ -1,5 +1,8 @@
 import streamlit as st
 import random
+import requests
+import io
+from PIL import Image
 
 # 1. Sivun asetukset (Klubi- & DJ-henkinen tumma teema)
 st.set_page_config(page_title="Sofia AI", page_icon="🎧", layout="centered")
@@ -36,8 +39,8 @@ for msg in st.session_state.messages:
         st.markdown(f'<div class="user-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="bot-bubble">{msg["content"]}</div>', unsafe_allow_html=True)
-        if "image_url" in msg:
-            st.image(msg["image_url"], use_container_width=True)
+        if "image_data" in msg:
+            st.image(msg["image_data"], use_container_width=True)
 
 # Viestin syöttö alakulmassa
 user_input = st.chat_input("Kirjoita Sofialle...")
@@ -58,18 +61,21 @@ if user_input:
             
             # Luodaan satunnaiskuva siemenluvulla
             seed = random.randint(1, 999999)
-            
-            # Ohjeet tekoälylle korjattuna tavallisilla välilyönneillä
             prompt = "A realistic modern selfie of a beautiful 22-year-old Finnish girl, short platinum blonde hair, grey-blue eyes, athletic body, wearing earrings, bold club style clothing, bokeh neon lights background, night club"
-            
-            # Koodi muuttaa välilyönnit automaattisesti toimiviksi %20-merkeiksi nettiä varten
             netti_prompt = prompt.replace(" ", "%20")
             suora_kuva_url = f"https://pollinations.ai{netti_prompt}?width=500&height=500&enhance=true&seed={seed}"
-
             
-            # Näytetään kuva livenä
-            st.image(suora_kuva_url, use_container_width=True)
-            st.session_state.messages.append({"role": "bot", "content": vastaus, "image_url": suora_kuva_url})
+            try:
+                # Ladataan kuva palvelimen muistiin ennen näyttämistä, tämä korjaa rikkinäisen ikonin
+                kuva_data = requests.get(suora_kuva_url, timeout=20).content
+                valmis_kuva = Image.open(io.BytesIO(kuva_data))
+                
+                st.image(valmis_kuva, use_container_width=True)
+                st.session_state.messages.append({"role": "bot", "content": vastaus, "image_data": valmis_kuva})
+            except:
+                virhe = "Äh, mun kamera reistaa, kokeile sekunnin päästä uudestaan! 📸"
+                st.markdown(f'<div class="bot-bubble">{virhe}</div>', unsafe_allow_html=True)
+                st.session_state.messages.append({"role": "bot", "content": virhe})
         else:
             # Sofian suorapuheinen persoona vastaa chattiin
             vastaukset = [
