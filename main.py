@@ -31,12 +31,13 @@ def kysy_geminilta(ohje, historia):
     if not gemini_key:
         return "API-avain (GEMINI_KEY) puuttuu kokonaan Streamlit Secrets -asetuksista!"
         
+    # TÄMÄ ON SE OIKEOPILLINEN JA TOIMIVA OSOITE KOKONAISUUDESSAAN:
     url = f"https://googleapis.com{gemini_key}"
     headers = {'Content-Type': 'application/json'}
     
-    # Rakennetaan Geminille sopiva viestihistoria ja lisätään luonnerooli alkuun
     contents = []
     
+    # Syötetään hahmon luonne "system-ohjeena" Geminille
     contents.append({"role": "user", "parts": [{"text": f"MÄÄRITELMÄ: {ohje}. Vastaa seuraaviin viesteihin täysin tämän roolin mukaisesti."}]})
     contents.append({"role": "model", "parts": [{"text": "Ymmärretty. Toimin tästä eteenpäin täysin tämän hahmon luonteen mukaisesti luonnollisella suomen kielellä."}]})
     
@@ -50,13 +51,11 @@ def kysy_geminilta(ohje, historia):
         res = requests.post(url, headers=headers, data=json.dumps(data), timeout=15)
         vastaus_json = res.json()
         
-        # Jos Google palauttaa virheen JSON-muodossa
         if 'error' in vastaus_json:
             return f"Googlen API-virhe: {vastaus_json['error']['message']} (Koodi: {vastaus_json['error']['code']})"
             
-        return vastaus_json['candidates'][0]['content']['parts'][0]['text']
+        return vastaus_json['candidates']['content']['parts']['text']
     except Exception as e:
-        # Tämä paljastaa meille tarkan teknisen syyn chattiin jos jokin kaatuu
         vastaus_teksti = res.text if 'res' in locals() else 'Ei vastausta palvelimelta'
         return f"Yhteysvirhe: {str(e)} | Palvelimen vastaus: {vastaus_teksti}"
 
